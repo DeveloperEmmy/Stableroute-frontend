@@ -523,6 +523,8 @@ describe('QuotePage', () => {
   });
 
   it('announces form submission status via a polite live region', async () => {
+    jest.useFakeTimers();
+
     let resolveRequest: ((value: Response) => void) | undefined;
     const pendingResponse = new Promise<Response>((resolve) => {
       resolveRequest = resolve;
@@ -545,10 +547,14 @@ describe('QuotePage', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: /Get quote/i }));
 
-    // The sr-only live region should announce the in-progress status
     const liveAnnouncement = document.querySelector(
-      '[aria-live=polite].sr-only'
+      'form [aria-live=polite].sr-only'
     );
+
+    act(() => {
+      jest.advanceTimersByTime(150);
+    });
+
     expect(liveAnnouncement).toHaveTextContent('Requesting quote…');
 
     resolveRequest?.({
@@ -568,7 +574,7 @@ describe('QuotePage', () => {
     });
   });
 
-  it('clears the sr-only announcement when the request fails', async () => {
+  it('announces the failure via the live region when the request fails', async () => {
     const mockFetch = jest.fn().mockResolvedValueOnce({
       ok: false,
       status: 500,
@@ -597,17 +603,84 @@ describe('QuotePage', () => {
     });
 
     const liveAnnouncement = document.querySelector(
-      '[aria-live=polite].sr-only'
+      'form [aria-live=polite].sr-only'
     );
-    expect(liveAnnouncement).toHaveTextContent('');
+    expect(liveAnnouncement).toHaveTextContent('Quote request failed.');
   });
 
   it('does not announce form status on initial render', () => {
     render(<QuotePage />);
     const liveAnnouncement = document.querySelector(
-      '[aria-live=polite].sr-only'
+      'form [aria-live=polite].sr-only'
     );
     expect(liveAnnouncement).toHaveTextContent('');
+  });
+
+  it('coalesces rapid quote announcements into the latest status message', async () => {
+    jest.useFakeTimers();
+
+    let resolveFirst: ((value: Response) => void) | undefined;
+    let resolveSecond: ((value: Response) => void) | undefined;
+
+    const firstResponse = new Promise<Response>((resolve) => {
+      resolveFirst = resolve;
+    });
+    const secondResponse = new Promise<Response>((resolve) => {
+      resolveSecond = resolve;
+    });
+
+    const mockFetch = jest
+      .fn()
+      .mockImplementationOnce(() => firstResponse)
+      .mockImplementationOnce(() => secondResponse);
+    globalThis.fetch = mockFetch as unknown as typeof globalThis.fetch;
+
+    render(<QuotePage />);
+    fireEvent.change(getSourceInput(), {
+      target: { value: 'USDC' },
+    });
+    fireEvent.change(getDestinationInput(), {
+      target: { value: 'EURC' },
+    });
+    fireEvent.change(getAmountInput(), {
+      target: { value: '100' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Get quote/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Get quote/i }));
+
+    const liveAnnouncement = document.querySelector(
+      'form [aria-live=polite].sr-only'
+    );
+    expect(liveAnnouncement).toHaveTextContent('Requesting quote…');
+
+    resolveFirst?.({
+      ok: true,
+      text: async () =>
+        JSON.stringify({
+          source_asset: 'USDC',
+          dest_asset: 'EURC',
+          amount: '100',
+          estimated_rate: '1.0',
+          route: ['USDC', 'EURC'],
+        }),
+    } as unknown as Response);
+
+    resolveSecond?.({
+      ok: true,
+      text: async () =>
+        JSON.stringify({
+          source_asset: 'USDC',
+          dest_asset: 'EURC',
+          amount: '100',
+          estimated_rate: '1.0',
+          route: ['USDC', 'EURC'],
+        }),
+    } as unknown as Response);
+
+    await waitFor(() => {
+      expect(liveAnnouncement).toHaveTextContent('Quote received.');
+    });
   });
 
   it('omits the requestId line when the backend does not include one', async () => {

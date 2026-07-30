@@ -86,7 +86,7 @@ export default function QuoteClient() {
   const [formError, setFormError] = useState<string | null>(null);
   const [requestId, setRequestId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { message: formStatus, announce } = useFormAnnouncement();
+  const { message: formStatus, announce } = useFormAnnouncement(150);
   const activeRequestRef = useRef(0);
   const requestControllerRef = useRef<AbortController | null>(null);
   const lastSubmitAtRef = useRef<number | null>(null);
@@ -202,7 +202,7 @@ export default function QuoteClient() {
       const apiError = err as ApiError & { requestId?: string };
       setFormError(apiError.message ?? 'quote request failed');
       setRequestId(apiError.requestId ?? null);
-      announce('');
+      announce('Quote request failed.');
     } finally {
       if (currentRequestId === activeRequestRef.current) {
         setLoading(false);
@@ -286,7 +286,7 @@ export default function QuoteClient() {
         >
           {loading ? 'Quoting…' : 'Get quote'}
         </button>
-        <p aria-live="polite" className="sr-only">
+        <p role="status" aria-live="polite" aria-atomic="true" className="sr-only">
           {formStatus}
         </p>
       </form>
