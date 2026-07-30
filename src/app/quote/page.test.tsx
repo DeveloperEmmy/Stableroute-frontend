@@ -646,8 +646,9 @@ describe('QuotePage', () => {
       target: { value: '100' },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /Get quote/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Get quote/i }));
+    const form = getAmountInput().closest('form')!;
+    fireEvent.submit(form);
+    fireEvent.submit(form);
 
     const liveAnnouncement = document.querySelector(
       'form [aria-live=polite].sr-only'
@@ -713,7 +714,7 @@ describe('QuotePage', () => {
     fireEvent.click(screen.getByRole('button', { name: /Get quote/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/must differ/i)).toBeInTheDocument();
+      expect(screen.getByRole('alert')).toHaveTextContent(/must differ/i);
     });
     // Client-generated X-Request-Id is surfaced for support correlation.
     expect(screen.getByRole('alert')).toHaveTextContent(/Request ID:/);
