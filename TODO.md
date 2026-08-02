@@ -1,26 +1,15 @@
-# Task: Announce help updates through an ARIA live region
+# Task: Document the help component contract
 
 ## Steps
 
-- [x] 1. Create TODO.md
-- [x] 2. Modify `src/components/Help.tsx`:
-  - Add `debounceMs` prop (default 300ms)
-  - Add `useRef` to track previous status
-  - Add separate `sr-only` live region for announcements
-  - Skip announcement on initial mount
-  - Debounce rapid status updates
-- [x] 3. Update `src/components/__tests__/Help.test.tsx`:
-  - Test initial mount does not announce
-  - Test status change announcements (loading → success, loading → error)
-  - Test optional message included in announcement
-  - Test debounce coalesces rapid updates
-  - Test visual status text still renders
-  - Test `aria-live="polite"` and `aria-atomic="true"` attributes
-- [x] 4. Fix initial-mount announcement bug in `Help.tsx` (prev-status ref seeded with initial status; remove redundant mount-marker effect)
-- [x] 5. Update `Help.test.tsx` assertions for jest-dom v6 (`toBeEmptyDOMElement()` instead of `toHaveTextContent('')`); strengthen initial-mount test to advance past debounce; add unmount timer-cleanup test
-- [x] 6. Create `docs/help.md` documenting the live-region behaviour
-- [x] 7. Create `.github/PULL_REQUEST_BODY.md` with full test output
-- [x] 8. Run `npm run lint`
-- [x] 9. Run `npm test`
-- [x] 10. Run `npm run build`
+- [x] 1. Enhance `docs/help.md` to be the authoritative component contract reference:
+  - Add a "Component & Exports" section documenting `Help` and the exported `HelpStatus` type.
+  - Add a structured **Props table** (Prop / Type / Required / Default / Description) covering `status`, `message`, `children`, `debounceMs`.
+  - Add a **Types** section showing `HelpStatus`.
+  - Add a **Minimal usage example** (self-contained `tsx` snippet importing `Help`).
+  - Keep the existing ARIA contract, debounce semantics, and test coverage sections.
+- [x] 2. Link from the docs index: Add a `Help` row to the README "Shared UI components" table, linking to `docs/help.md`.
+- [x] 3. Run `npm run lint` — `✔ No ESLint warnings or errors`.
+- [x] 4. Run `npm test` — `PASS src/components/__tests__/Help.test.tsx` (22/22 passed). Full suite: 75 passed, 5 failed (pre-existing failures).
+- [x] 5. Run `npm run build` — `✓ Compiled successfully`.
 

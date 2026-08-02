@@ -1,10 +1,40 @@
-# Help Component Accessibility
+# Help Component Contract
 
 The [`Help`](../src/components/Help.tsx) component is a contextual help surface
 that renders a trigger/content subtree alongside a status readout. Its async
 updates are announced to assistive technology through a dedicated **polite live
 region**, so screen-reader users are not left guessing whether help copy has
 finished loading, is unavailable, or is ready to read.
+
+The component is memoized (`React.memo`) so stable props prevent needless
+re-renders of the trigger subtree.
+
+## Component & Exports
+
+`src/components/Help.tsx` exports:
+
+| Export       | Kind        | Description                                                            |
+| ------------ | ----------- | ---------------------------------------------------------------------- |
+| `Help`       | Component   | Memoized contextual help surface (the default UI component).           |
+| `HelpStatus` | Type        | Union of the four mutually-exclusive render states the component accepts. |
+
+## Props
+
+| Prop        | Type                                  | Required | Default | Description                                                                                                                            |
+| ----------- | ------------------------------------- | -------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `status`    | `HelpStatus`                          | Yes      | —       | Mutually-exclusive render state. Drives which status message is shown.                                                                 |
+| `message`   | `string`                              | No       | —       | Extra detail appended to the current status label (e.g. error detail, empty hint). Omitted entirely when not provided.                 |
+| `children`  | `ReactNode`                           | Yes      | —       | The trigger/content element the help affordance is attached to. Always renders regardless of status.                                   |
+| `debounceMs`| `number`                              | No       | `300`   | Debounce window (ms) for the live-region announcement. Rapid status changes are coalesced so the last one wins. Set to `0` for immediate announcement. |
+
+### Types
+
+```typescript
+export type HelpStatus = 'loading' | 'empty' | 'error' | 'success';
+```
+
+The `HelpStatus` type is exported from `src/components/Help.tsx` so callers can
+type their state without hardcoding the union.
 
 ## Status model
 
@@ -20,6 +50,37 @@ finished loading, is unavailable, or is ready to read.
 An optional `message` string is appended to both the visible label and the
 announcement (e.g. `Help unavailable: Network error`). If omitted, no trailing
 segment is rendered or announced.
+
+## Minimal usage example
+
+```tsx
+import { Help, type HelpStatus } from '@/components/Help';
+
+function HelpSurface({ status, error }: { status: HelpStatus; error?: string }) {
+  return (
+    <Help status={status} message={error} debounceMs={300}>
+      <button type="button">Get help</button>
+    </Help>
+  );
+}
+```
+
+## Behavior & rendering contract
+
+- **Status readout** — the visible `<span role="status" aria-live="polite">`
+  always renders and carries the current status label (plus `message` when
+  provided). The previous label is replaced, never stacked.
+- **Children** — the `children` subtree is rendered unconditionally, so the
+  trigger remains interactive in every state.
+- **Live announcement** — a separate `sr-only` region
+  (`aria-live="polite"`, `aria-atomic="true"`) is populated **only when the
+  status actually changes**, so screen readers hear the transition without the
+  page re-reading the initial state on mount.
+- **Debounce** — the announcement is written after `debounceMs` (default
+  `300ms`). Rapid successive changes are coalesced — the last one wins. A
+  pending timer is cancelled on re-render and on unmount.
+- **Memoization** — wrapped with `React.memo`; re-renders only when prop
+  references change.
 
 ## ARIA contract
 
@@ -55,18 +116,6 @@ Help copy can transition quickly through `loading → success` (or
 would be interrupted by a rapid string of announcements. Debouncing keeps the
 announcement queue quiet and lets the final state win.
 
-## Example
-
-```tsx
-<Help
-  status={helpState.status}
-  message={helpState.error ?? undefined}
-  debounceMs={300}
->
-  <HelpTriggerButton />
-</Help>
-```
-
 ## Tests
 
 Behaviour is covered in
@@ -85,5 +134,6 @@ Behaviour is covered in
 ## Related documentation
 
 - [Loading Region Accessibility](loading-regions.md)
+- [Tooltips](tooltips.md)
 - [Accessibility Conformance Statement](ACCESSIBILITY.md)
 
