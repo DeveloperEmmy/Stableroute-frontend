@@ -16,6 +16,11 @@
   - Test debounce coalesces rapid updates
   - Test visual status text still renders
   - Test `aria-live="polite"` and `aria-atomic="true"` attributes
-- [ ] 4. Run `npm test` to verify all tests pass (Node.js/npm not available on this system)
-- [ ] 5. Run `npm run lint` to check linting (Node.js/npm not available on this system)
-- [ ] 6. Run `npm run build` to verify build (Node.js/npm not available on this system)
+- [x] 4. Fix initial-mount announcement bug in `Help.tsx` (prev-status ref seeded with initial status; remove redundant mount-marker effect)
+- [x] 5. Update `Help.test.tsx` assertions for jest-dom v6 (`toBeEmptyDOMElement()` instead of `toHaveTextContent('')`); strengthen initial-mount test to advance past debounce; add unmount timer-cleanup test
+- [x] 6. Create `docs/help.md` documenting the live-region behaviour
+- [x] 7. Create `.github/PULL_REQUEST_BODY.md` with full test output
+- [x] 8. Run `npm run lint`
+- [x] 9. Run `npm test`
+- [x] 10. Run `npm run build`
+

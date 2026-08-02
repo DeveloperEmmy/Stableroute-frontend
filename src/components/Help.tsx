@@ -26,30 +26,17 @@ const STATUS_LABEL: Record<HelpStatus, string> = {
 
 function HelpBase({ status, message, children, debounceMs = 300 }: Props) {
   const [liveAnnouncement, setLiveAnnouncement] = useState('');
-  const prevStatusRef = useRef<HelpStatus | null>(null);
-  const isMountedRef = useRef(false);
+  // Seed the previous-status ref with the initial status so the very first
+  // effect run sees "no change" and never announces the initial mount.
+  const prevStatusRef = useRef<HelpStatus>(status);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Mark as mounted after first render so we skip the initial announcement.
   useEffect(() => {
-    isMountedRef.current = true;
-  }, []);
-
-  useEffect(() => {
-    // Skip the initial mount so the empty region is never announced on first render.
-    if (!isMountedRef.current) return;
-
     const prevStatus = prevStatusRef.current;
     prevStatusRef.current = status;
 
     // Only announce when status actually changes.
     if (prevStatus === status) return;
-
-    // Cancel any pending debounced announcement.
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
 
     const buildAnnouncement = () => {
       const base = STATUS_LABEL[status];

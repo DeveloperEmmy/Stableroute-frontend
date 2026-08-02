@@ -86,7 +86,6 @@ export default function QuoteClient() {
   const [formError, setFormError] = useState<string | null>(null);
   const [requestId, setRequestId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { message: formStatus, announce } = useFormAnnouncement(150);
   const { message: formStatus, announce } = useFormAnnouncement();
   const [slippageAnnouncement, setSlippageAnnouncement] = useState('');
   const activeRequestRef = useRef(0);
@@ -306,7 +305,7 @@ export default function QuoteClient() {
         >
           {loading ? 'Quoting…' : 'Get quote'}
         </button>
-        <p role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        <p aria-live="polite" className="sr-only">
           {formStatus}
         </p>
       </form>

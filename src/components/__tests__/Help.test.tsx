@@ -128,7 +128,14 @@ describe('Help', () => {
           <span>trigger</span>
         </Help>
       );
-      expect(getLiveRegion()).toHaveTextContent('');
+      // Nothing is announced on the initial render...
+      expect(getLiveRegion()).toBeEmptyDOMElement();
+
+      // ...and nothing is announced even after the debounce window elapses.
+      act(() => {
+        jest.advanceTimersByTime(300);
+      });
+      expect(getLiveRegion()).toBeEmptyDOMElement();
     });
 
     it('switches to loading → success after debounce', () => {
@@ -139,7 +146,7 @@ describe('Help', () => {
       );
 
       // After initial mount, the live region is empty.
-      expect(getLiveRegion()).toHaveTextContent('');
+      expect(getLiveRegion()).toBeEmptyDOMElement();
 
       // Change status to success.
       rerender(
@@ -149,7 +156,7 @@ describe('Help', () => {
       );
 
       // Before debounce, the announcement is still pending.
-      expect(getLiveRegion()).toHaveTextContent('');
+      expect(getLiveRegion()).toBeEmptyDOMElement();
 
       // Advance past the default 300ms debounce.
       act(() => {
@@ -266,7 +273,7 @@ describe('Help', () => {
       });
 
       // Still empty because status never changed.
-      expect(getLiveRegion()).toHaveTextContent('');
+      expect(getLiveRegion()).toBeEmptyDOMElement();
     });
 
     it('respects a custom debounce window', () => {
@@ -286,7 +293,7 @@ describe('Help', () => {
       act(() => {
         jest.advanceTimersByTime(300);
       });
-      expect(getLiveRegion()).toHaveTextContent('');
+      expect(getLiveRegion()).toBeEmptyDOMElement();
 
       // Announced at 500ms.
       act(() => {
@@ -330,6 +337,31 @@ describe('Help', () => {
         </Help>
       );
       expect(getLiveRegion()).toHaveClass('sr-only');
+    });
+
+    it('cancels the pending debounced announcement when unmounted', () => {
+      const { rerender, unmount } = render(
+        <Help status="loading">
+          <span>trigger</span>
+        </Help>
+      );
+
+      rerender(
+        <Help status="success">
+          <span>trigger</span>
+        </Help>
+      );
+
+      // Unmount before the debounce window elapses.
+      unmount();
+
+      act(() => {
+        jest.advanceTimersByTime(300);
+      });
+
+      // The unmounted component never published its announcement, and the
+      // pending timer was cleared — no error is thrown and nothing lingers.
+      expect(() => screen.getByTestId('help-live-region')).toThrow();
     });
   });
 });
